@@ -24,6 +24,10 @@ jobs:
         with:
           channel: 'stable'
 
+      - name: Re-create iOS Project Platform Files
+        run: |
+          flutter create . --platforms=ios --org com.ebookreader
+
       - name: Install dependencies
         run: flutter pub get
 
@@ -34,7 +38,7 @@ jobs:
       - name: Create IPA Package
         run: |
           mkdir -p Payload
-          cp -r build/ios/archive/Runner.xcarchive/Products/Applications/Runner.app Payload/ || cp -r build/ios/iphoneos/Runner.app Payload/
+          cp -r build/ios/iphoneos/Runner.app Payload/ || cp -r build/ios/archive/Runner.xcarchive/Products/Applications/Runner.app Payload/
           zip -r EbookReader.ipa Payload
 
       - name: Upload IPA Artifact
