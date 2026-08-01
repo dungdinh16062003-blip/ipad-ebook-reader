@@ -27,13 +27,15 @@ jobs:
           cd ebookapp
           cordova platform add ios@5.1.1
 
-      - name: Configure iOS Deployment Target in config.xml
+      - name: Configure iOS Deployment Target for iPad 3
         run: |
           cd ebookapp
-          # Chèn cấu hình Deployment Target 8.0 cho iOS 9.x vào config.xml
+          # Chen deployment-target = 8.0 vao config.xml
           sed -i '' '/<\/widget>/i\
           <preference name="deployment-target" value="8.0" />\
           ' config.xml
+          # Ha target deployment trong file du an Xcode ve 8.0 cho iOS 9.x
+          sed -i '' 's/IPHONEOS_DEPLOYMENT_TARGET = .*/IPHONEOS_DEPLOYMENT_TARGET = 8.0;/g' platforms/ios/EbookReader.xcodeproj/project.pbxproj
 
       - name: Add Web Ebook Reader Code
         run: |
@@ -71,22 +73,23 @@ jobs:
           </html>
           EOF
 
-      - name: Set iOS Minimum Deployment Target in Xcode Project
+      - name: Build iOS Project (Generic Destination - Fix Exit Code 70)
         run: |
-          cd ebookapp
-          sed -i '' 's/IPHONEOS_DEPLOYMENT_TARGET = .*/IPHONEOS_DEPLOYMENT_TARGET = 8.0;/g' platforms/ios/EbookReader.xcodeproj/project.pbxproj
-
-      - name: Build Cordova iOS (Fix Simulator Target for iPad)
-        run: |
-          cd ebookapp
-          # Định danh rõ target iPad để không bị dính lỗi iPhone 16e / OS:latest
-          cordova build ios --no-telemetry -- --emulator --target="iPad (A16)"
+          cd ebookapp/platforms/ios
+          xcodebuild -workspace EbookReader.xcworkspace \
+            -scheme EbookReader \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -destination "generic/platform=iOS Simulator" \
+            build \
+            CONFIGURATION_BUILD_DIR=build/emulator
 
       - name: Create IPA Package
         run: |
+          cd ebookapp/platforms/ios
           mkdir -p Payload
-          cp -r ebookapp/platforms/ios/build/emulator/EbookReader.app Payload/
-          zip -r EbookReader_iPad3.ipa Payload
+          cp -r build/emulator/EbookReader.app Payload/
+          zip -r ../../../EbookReader_iPad3.ipa Payload
 
       - name: Upload IPA Artifact
         uses: actions/upload-artifact@v4
